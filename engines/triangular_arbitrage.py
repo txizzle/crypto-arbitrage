@@ -133,8 +133,21 @@ class CryptoEngineTriArbitrage(object):
             status = 2 # ask route
         else:
             status = 0 # do nothing
+            print 'No arbitrage opportunity, excluding fees.'
+            # Debug only
+            maxAmounts = self.getMaxAmount(lastPrices, responses, status)
+            fee = 0
+            for index, amount in enumerate(maxAmounts):
+                fee += amount * lastPrices[index]
+            fee *= self.engine.feeRatio
+            bidRoute_profit = (bidRoute_result - 1) * lastPrices[0] * maxAmounts[0]
+            askRoute_profit = (askRoute_result - 1) * lastPrices[1] * maxAmounts[1]
+            print 'bidRoute_profit - {0} askRoute_profit - {1} fee - {2}'.format(
+                bidRoute_profit, askRoute_profit, fee
+            )
         
         if status > 0:
+            print 'Arbitrage opportunity, excluding fees!'
             maxAmounts = self.getMaxAmount(lastPrices, responses, status)
             fee = 0
             for index, amount in enumerate(maxAmounts):
@@ -143,11 +156,20 @@ class CryptoEngineTriArbitrage(object):
             
             bidRoute_profit = (bidRoute_result - 1) * lastPrices[0] * maxAmounts[0]
             askRoute_profit = (askRoute_result - 1) * lastPrices[1] * maxAmounts[1]
-            # print 'bidRoute_profit - {0} askRoute_profit - {1} fee - {2}'.format(
-            #     bidRoute_profit, askRoute_profit, fee
-            # )
+            print 'bidRoute_profit - {0} askRoute_profit - {1} fee - {2}'.format(
+                bidRoute_profit, askRoute_profit, fee
+            )
+            print 'Actual Profit: {0}'.format(bidRoute_profit - fee)
             if status == 1 and bidRoute_profit - fee > self.minProfitUSDT:
-                print strftime('%Y%m%d%H%M%S') + ' Bid Route: Result - {0} Profit - {1} Fee - {2}'.format(bidRoute_result, bidRoute_profit, fee)
+                print '***Arbitrage bid opportunity, including fees!***'
+                arb_result = strftime('%Y%m%d%H%M%S') + ' Bid Route: Gross Profit: {0}, Result: {1}, Profit - {2}, Fee - {3}'.format(bidRoute_profit - fee, bidRoute_result, bidRoute_profit, fee)
+                print arb_result
+                
+                # Logging
+                f = open('log.txt', 'w')
+                f.write(arb_result)
+                f.close()
+
                 orderInfo = [
                     {
                         "tickerPair": self.exchange['tickerPairA'],
@@ -170,7 +192,15 @@ class CryptoEngineTriArbitrage(object):
                 ]
                 return {'status': 1, "orderInfo": orderInfo}
             elif status == 2 and askRoute_profit - fee > self.minProfitUSDT:
-                print strftime('%Y%m%d%H%M%S') + ' Ask Route: Result - {0} Profit - {1} Fee - {2}'.format(askRoute_result, askRoute_profit, fee)
+                print '***Arbitrage bid opportunity, including fees!***'
+                arb_result = strftime('%Y%m%d%H%M%S') + ' Ask Route: Gross Profit: {0}, Result: {1}, Profit - {2}, Fee - {3}'.format(askRoute_profit - fee, askRoute_result, askRoute_profit, fee)
+                print arb_result
+                
+                # Logging
+                f = open('log.txt', 'w')
+                f.write(arb_result)
+                f.close()
+
                 orderInfo = [
                     {
                         "tickerPair": self.exchange['tickerPairA'],
